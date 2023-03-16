@@ -1,0 +1,802 @@
+#include "Math.HC.z"
+#include "PopUp.HC.z"
+#include "Data.HC.z"
+
+I64 imported_model, mx[10], my[10], mxt[10], myt[10];
+Bool playing_animation = FALSE;
+Bool rotation_mode = FALSE;
+Bool background = FALSE;
+Bool selected_point = FALSE;
+I64 current_amount = 1;
+I64 selected_stickman = -1;
+I64 m;
+I64 stickmans[10][10][8];
+I64 stickman_x[10], stickman_y[10], stickman_r[10];
+frame timeline[100];
+I64 current_frame = 0;
+Bool timeline_content[100];
+
+I64 tico;
+for (tico=0;tico<100;tico++)
+	timeline_content[tico] = FALSE;
+
+stickman_y[0] = 0;
+stickman_r[0] = 0;
+mx[0] = -1;
+my[0] = -1;
+mxt[0] = 0;
+myt[0] = 0;
+
+U0 load_frame (I64 f) {
+	if (timeline_content[f]) {
+		I64 limb, limb_a, stkm, stkmx;
+		for (stkm=0;stkm<10;stkm++) {
+			for (limb=0;limb<10;limb++) {
+				for (limb_a=0;limb_a<8;limb_a++) {
+					stickmans[stkm][limb][limb_a] = timeline[current_frame].stickmans[stkm][limb][limb_a];
+				}
+			}
+		}
+		for (stkmx=0;stkmx<10;stkmx++) {
+			stickman_x[stkmx] = timeline[current_frame].stickman_x[stkmx];
+			stickman_y[stkmx] = timeline[current_frame].stickman_y[stkmx];
+			stickman_r[stkmx] = timeline[current_frame].stickman_r[stkmx];
+		}
+	}
+}
+
+U0 LoadAnimation () {
+	U8 *src, *filepath;
+	if (filepath = PopUpFileName("~/Animations/")) {
+		CDoc *f = DocNew;
+		U8 *name2;
+		I64 size=0;
+		I64 flags=0;
+		I64 i=0;
+		I64 cop;
+		I64 fr, s, l ,v;
+		I64 add_val = 0;
+		Bool op = FALSE;
+		f->flags|=flags;
+		name2=FileNameAbs(filepath);
+		StrCpy(f->filename.name,name2);
+		timeline_content[0] = TRUE;
+		if (src=FileRead(name2,&size,&f->file_attr)) {
+			"Sorry, i haven't figured out how to fix the loading system.\n";
+			//"%d\n", size;
+			for (i=0;i<size;i++) {
+				if (src[i] == 'U' && src[i + 1] == '0' && src[i + 2] == ' ' && src[i + 3] == 'm') {
+					op = TRUE;
+					cop = i + 13;
+				}
+				if (op) {
+					/*if (src[cop + 1] == 's' && src[cop+2] == 't') {
+						if (src[cop+11] == 'v') {
+							//if (src[cop+14] != ']') {
+							//	add_val = 1;
+							//	fr = (ToI64(src[cop+13]) * 10) + (ToI64(src[cop+14]));
+							// else {
+							//	fr = ToI64(src[cop+13]);
+							//}
+							//s = ToI64(src[cop+16+ add_val]);
+							//l = ToI64(src[cop+19+ add_val]);
+							//v = ToI64(src[cop+24+ add_val]);
+							//stickmans[s][l][5] = v;
+							//print("LEM v, frame: {0} stickman: {1} limb: {2} value: {3}".format(f, s, l, v))
+							//cop += 27 + add_val;
+						} else {
+							if (src[cop+15] != ']') {
+								add_val = 1;
+								fr = ((src[cop+14] - '0') * 10) + (src[cop+15] - '0');
+							} else {
+								add_val = 0;
+								fr = src[cop+14] - '0';
+							}
+							s = src[cop+17 + add_val] - '0';
+							l = src[cop+20 + add_val] - '0';
+							v = (src[cop+27 + add_val] - '0') + ((src[cop+26 + add_val] - '0') * 10) + ((src[cop+25 + add_val] - '0') * 100);
+							if (src[cop+31+add_val] == 'x' && src[cop+32+add_val] == '1') {
+								"%d %d %d\n", s, l, v - 320;
+								stickmans[s][l][0] = v - 320;
+								timeline[fr].stickmans[s][l][0] = v - 320;
+							}
+							cop += 30 + add_val;
+							if src[cop+11] == 'x' and src[cop+12] == '1':
+								print("LEM x1, frame: {0} stickman: {1} limb: {2} value: {3}".format(f, s, l, v))
+							if src[cop+11] == 'x' and src[cop+12] == '2':
+								print("LEM x2, frame: {0} stickman: {1} limb: {2} value: {3}".format(f, s, l, v))
+							if src[cop+11] == 'y' and src[cop+12] == '1':
+								print("LEM y1, frame: {0} stickman: {1} limb: {2} value: {3}".format(f, s, l, v))
+							if src[cop+11] == 'y' and src[cop+12] == '2':
+								print("LEM y2, frame: {0} stickman: {1} limb: {2} value: {3}".format(f, s, l, v))
+						}
+					}
+				}
+				current_frame = 0;
+				stickman_x[0] = 0;
+				stickman_y[0] = 0;
+				timeline[fr].stickman_x[0] = 0;
+				timeline[fr].stickman_y[0] = 0;
+				load_frame(0);*/
+			}
+		}
+	}
+}
+
+U0 SaveAnimation () {
+	I64 sv, lv, fv, clv, f;
+	U8 *src, *filepath;
+	//if (filepath = PopUpFileName("")) {
+	DirMk("~/Animations");
+	CDoc *doc=DocNew("~/Animations/Animation.HC.z");
+	DocPrint(doc, ""
+	"//Generated with ReAnimation\n\n"
+	"I64 fms;\n"
+	"fms = GetI64(\"Speed (ms/f): \");\n"
+	"I64 stickmans_x1[100][%d][10];\n"
+	"I64 stickmans_y1[100][%d][10];\n"
+	"I64 stickmans_x2[100][%d][10];\n"
+	"I64 stickmans_y2[100][%d][10];\n"
+	"I64 stickmans_v[100][%d][10];\n"
+	"I64 amount = %d;\n"
+	"I64 dis;\n"
+	"I64 frame = 0;\n"
+	"I64 frames = 100;\n"
+	"U0 Changeframe (I64 f) {\n"
+	"	if (f < frames)\n"
+	"		frame = f;\n"
+	"}\n"
+	"U0 DrawIt (CTask *task, CDC *dc) {\n",
+		current_amount,
+		current_amount,
+		current_amount,
+		current_amount,
+		current_amount,
+		current_amount,
+		current_amount,
+		current_amount
+	);
+	if (background) {
+		DocPrint(doc, "	dc->color = BLACK;\n"
+		"	GrLine(dc, 0, 320, 640, 320);\n");
+	}
+	for (fv=0;fv<current_amount;fv++) {
+		for (clv=0;clv<10;clv++) {
+			if (stickmans[fv][clv][4] == 0) {
+				DocPrint(doc,
+				"	GrLine(dc, \n"
+				"		stickmans_x1[frame][%d][%d],\n"
+				"		stickmans_y1[frame][%d][%d],\n"
+				"		stickmans_x2[frame][%d][%d],\n"
+				"		stickmans_y2[frame][%d][%d]\n"
+				"	);\n",
+					fv, clv,
+					fv, clv,
+					fv, clv,
+					fv, clv
+				);
+			} else if (stickmans[fv][clv][4] == 1) {
+				I64 dis = dist(
+					stickmans[fv][clv][0],
+					stickmans[fv][clv][2],
+					stickmans[fv][clv][1],
+					stickmans[fv][clv][3]
+				);
+				I64 midx = ToI64((stickmans[fv][clv][0] + stickmans[fv][clv][2]) / 2);
+				I64 midy = ToI64((stickmans[fv][clv][1] + stickmans[fv][clv][3]) / 2);
+				DocPrint(doc,
+				"	dis = ToI64(Sqrt(Pow(stickmans_x2[frame][%d][%d] - stickmans_x1[frame][%d][%d],  2.0) + Pow(stickmans_y2[frame][%d][%d] - stickmans_y1[frame][%d][%d], 2.0)));\n"
+				"	GrCircle(\n"
+				"		dc,\n"
+				"		ToI64((stickmans_x1[frame][%d][%d] + stickmans_x2[frame][%d][%d]) / 2),\n"
+				"		ToI64((stickmans_y1[frame][%d][%d] + stickmans_y2[frame][%d][%d]) / 2),\n"
+				"		dis / 2\n"
+				"	);\n",
+					fv, clv,
+					fv, clv,
+					fv, clv,
+					fv, clv,
+					fv, clv,
+					fv, clv,
+					fv, clv,
+					fv, clv
+				);
+			} else {
+				DocPrint(doc,
+				"	dc->color = stickmans_v[frame][%d][%d] - 2;\n"
+				"	GrLine(dc, \n"
+				"		stickmans_x1[frame][%d][%d],\n"
+				"		stickmans_y1[frame][%d][%d],\n"
+				"		stickmans_x2[frame][%d][%d],\n"
+				"		stickmans_y2[frame][%d][%d]\n"
+				"	);\n",
+					fv, clv,
+					fv, clv,
+					fv, clv,
+					fv, clv,
+					fv, clv
+				);
+			}
+		}
+	}
+	current_frame = 0;
+	load_frame(0);
+	DocPrint(doc,
+	"}\n"
+	"U0 main () {\n");
+	for (fv=0;fv<current_amount;fv++) {
+		for (f=0;f<100;f++) {
+			current_frame = f;
+			load_frame(f);
+			for (sv=0;sv<10;sv++) {
+				DocPrint(doc, "	stickmans_x1[%d][%d][%d] = %d;\n", f, fv, sv, rotX(stickman_r[fv], stickmans[fv][sv][0], stickmans[fv][sv][1]) + 320 - stickman_x[fv]);
+				DocPrint(doc, "	stickmans_x2[%d][%d][%d] = %d;\n", f, fv, sv, rotX(stickman_r[fv], stickmans[fv][sv][2], stickmans[fv][sv][3]) + 320 - stickman_x[fv]);
+				DocPrint(doc, "	stickmans_y1[%d][%d][%d] = %d;\n", f, fv, sv, rotY(stickman_r[fv], stickmans[fv][sv][0], stickmans[fv][sv][1]) + 240 - stickman_y[fv]);
+				DocPrint(doc, "	stickmans_y2[%d][%d][%d] = %d;\n", f, fv, sv, rotY(stickman_r[fv], stickmans[fv][sv][2], stickmans[fv][sv][3]) + 240 - stickman_y[fv]);
+				DocPrint(doc, "	stickmans_v[%d][%d][%d] = %d;\n", f, fv, sv, stickmans[fv][sv][4]);
+			}
+		}
+	}
+	DocPrint(doc,
+	"	I64 arg1, arg2, ch, msg_code, sc, frame;\n"
+	"	I64 old_flags=DocPut->flags;\n"
+	"	DocPut->flags|=DOCF_FORM;\n"
+	"	SettingsPush;\n"
+	"	WinBorder;\n"
+	"	WinMax;\n"
+	"	DocCursor;\n"
+	"	DocClear;\n"
+	"	I64 vf = 0;"
+	"	Fs->draw_it=&DrawIt;\n"
+	"	do {\n"
+	"		if (msg_code=ScanMsg(&arg1, &arg2, 1 << MSG_KEY_DOWN)) {\n"
+	"			sc=arg2;\n"
+	"			ch=arg1;\n"
+	"		}\n");
+	DocPrint(doc,
+	"		Sleep(fms);\n"
+	"		Changeframe(vf);\n"
+	"		vf += 1;"
+	"	} while (ch!=CH_ESC);\n"
+	"	DocPut->flags=DocPut->flags&~DOCF_FORM | old_flags & DOCF_FORM;\n"
+	"	SettingsPop;\n"
+	"}\n\n"
+	"main;\n"
+	"Dir;");
+	//FileWrite(filepath, src, StrLen(src));
+	DocWrite(doc,TRUE);
+	DocDel(doc);
+	//}
+}
+
+Bool no_selection () {
+	Bool res = FALSE;
+	I64 i, j0, max, may, mix, miy;
+	mix = 0;
+	max = 0;
+	miy = 0;
+	may = 0;
+	for (i=0;i<current_amount;i++) {
+		for (j0=0;j0<10;j0++) {
+			if (mix > stickmans[i][j0][0])
+				mix = stickmans[i][j0][0];
+			if (mix > stickmans[i][j0][2])
+				mix = stickmans[i][j0][2];
+			if (miy > stickmans[i][j0][1])
+				miy = stickmans[i][j0][1];
+			if (miy > stickmans[i][j0][3])
+				miy = stickmans[i][j0][3];
+			if (max < stickmans[i][j0][0])
+				max = stickmans[i][j0][0];
+			if (max < stickmans[i][j0][2])
+				max = stickmans[i][j0][2];
+			if (may < stickmans[i][j0][1])
+				may = stickmans[i][j0][1];
+			if (may < stickmans[i][j0][3])
+				may = stickmans[i][j0][3];
+		}
+		if (ms.pos.x > (mix + 310 - stickman_x[i])
+			&& ms.pos.x < (max + 340 - stickman_x[i])
+			&& ms.pos.y > (miy + 230 - stickman_y[i])
+			&& ms.pos.y < (may + 250 - stickman_y[i])
+		)
+			res = TRUE;
+	}
+	return res;
+}
+
+U0 DrawIt (CTask *task, CDC *dc) {
+	if (background) {
+		dc->color = BLACK;
+		GrLine(dc, 0, 320, 640, 320);
+	}
+	I64 i, j, j0, max[10], may[10], mix[10], miy[10];
+	for (j0=0;j0<10;j0++) {
+		mix[j0] = 0;
+		max[j0] = 0;
+		miy[j0] = 0;
+		may[j0] = 0;
+	}
+	if (ms.lb) {
+		if (ms.pos.y < FONT_HEIGHT * 3 && ms.pos.x >= FONT_WIDTH * 19 && ms.pos.x <= (FONT_WIDTH * 19) + 303) {
+			current_frame = ToI64((ms.pos.x - (FONT_WIDTH * 19)) / 3.03);
+			load_frame(current_frame);
+		}
+	}
+	for (i=0;i<current_amount;i++) {
+		for (j0=0;j0<10;j0++) {
+			if (mix[i] > stickmans[i][j0][0])
+				mix[i] = stickmans[i][j0][0];
+			if (mix[i] > stickmans[i][j0][2])
+				mix[i] = stickmans[i][j0][2];
+			if (miy[i] > stickmans[i][j0][1])
+				miy[i] = stickmans[i][j0][1];
+			if (miy[i] > stickmans[i][j0][3])
+				miy[i] = stickmans[i][j0][3];
+
+			if (max[i] < stickmans[i][j0][0])
+				max[i] = stickmans[i][j0][0];
+			if (max[i] < stickmans[i][j0][2])
+				max[i] = stickmans[i][j0][2];
+			if (may[i] < stickmans[i][j0][1])
+				may[i] = stickmans[i][j0][1];
+			if (may[i] < stickmans[i][j0][3])
+				may[i] = stickmans[i][j0][3];
+		}
+		if (ms.lb) {
+			if (ms.pos.x > (mix[i] + 310 - stickman_x[i])
+				&& ms.pos.x < (max[i] + 340 - stickman_x[i])
+				&& ms.pos.y > (miy[i] + 230 - stickman_y[i])
+				&& ms.pos.y < (may[i] + 250 - stickman_y[i])
+			) {
+				selected_stickman = i;
+				if (mx[i] == -1 && my[i] == -1) {
+					mx[i] = ms.pos.x;
+					my[i] = ms.pos.y;
+				}
+			} else {
+				if (!no_selection) {
+					selected_stickman = -1;
+					selected_point = FALSE;
+					mx[i] = -1;
+					my[i] = -1;
+					mxt[i] = stickman_x[i];
+					myt[i] = stickman_y[i];
+					rotation_mode = FALSE;
+				}
+			}
+			if (selected_stickman == i) {
+				if (!selected_point) {
+					stickman_x[i] = mx[i] - ms.pos.x + mxt[i];
+					stickman_y[i] = my[i] - ms.pos.y + myt[i];
+				} else {
+					for (m=0;m<10;m++) {
+						if (stickmans[i][m][7] == 1) {
+							stickmans[i][m][0] = ms.pos.x - (320 - stickman_x[i]);
+							stickmans[i][m][1] = ms.pos.y - (240 - stickman_y[i]);
+						}
+						if (stickmans[i][m][7] == 2) {
+							stickmans[i][m][2] = ms.pos.x - (320 - stickman_x[i]);
+							stickmans[i][m][3] = ms.pos.y - (240 - stickman_y[i]);
+						}
+					}
+				}
+			}
+		} else {
+			mx[i] = -1;
+			my[i] = -1;
+			mxt[i] = stickman_x[i];
+			myt[i] = stickman_y[i];
+			for (m=0;m<10;m++) {
+				if (stickmans[i][m][7] == 1 || stickmans[i][m][7] == 2)
+					stickmans[i][m][7] = 0;
+			}
+		}
+		for (j=0;j<10;j++) {
+			if (!playing_animation) {
+				if (stickmans[i][j][7] == 1)
+					dc->color = RED;
+				else
+					dc->color = LTGRAY;
+				GrCircle(dc, 
+					rotX(stickman_r[i], stickmans[i][j][0], stickmans[i][j][1]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], stickmans[i][j][0], stickmans[i][j][1]) + 240 - stickman_y[i], 
+					6
+				);
+				if (stickmans[i][j][7] == 2)
+					dc->color = RED;
+				else
+					dc->color = LTGRAY;
+				GrCircle(dc, 
+					rotX(stickman_r[i], stickmans[i][j][2], stickmans[i][j][3]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], stickmans[i][j][2], stickmans[i][j][3]) + 240 - stickman_y[i], 
+					6
+				);
+				if (selected_stickman == i) {
+					dc->color = RED;
+					I64 q = 0;
+					if (ms.lb) {
+						for (q=0;q<10;q++) {
+							stickmans[q][j][7] = 0;
+						}
+						if (insideCircle(ms.pos.x, ms.pos.y, rotX(stickman_r[i], stickmans[i][j][0], stickmans[i][j][1]) + 320 - stickman_x[i], rotY(stickman_r[i], stickmans[i][j][0], stickmans[i][j][1]) + 240 - stickman_y[i], 7))
+							stickmans[i][j][7] = 1;
+						if (insideCircle(ms.pos.x, ms.pos.y, rotX(stickman_r[i], stickmans[i][j][2], stickmans[i][j][3]) + 320 - stickman_x[i], rotY(stickman_r[i], stickmans[i][j][2], stickmans[i][j][3]) + 240 - stickman_y[i], 7))
+							stickmans[i][j][7] = 2;
+						if (stickmans[i][j][7] != 0)
+							selected_point = TRUE;
+					}
+				} else {
+					dc->color = BLACK;
+				}
+				GrLine(dc,
+					rotX(stickman_r[i], mix[i], miy[i]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], mix[i], miy[i]) + 240 - stickman_y[i],
+					rotX(stickman_r[i], max[i], miy[i]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], max[i], miy[i]) + 240 - stickman_y[i]
+				);
+				GrLine(dc, 
+					rotX(stickman_r[i], mix[i], may[i]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], mix[i], may[i]) + 240 - stickman_y[i],
+					rotX(stickman_r[i], max[i], may[i]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], max[i], may[i]) + 240 - stickman_y[i]
+				);
+				GrLine(dc, 
+					rotX(stickman_r[i], mix[i], miy[i]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], mix[i], miy[i]) + 240 - stickman_y[i],
+					rotX(stickman_r[i], mix[i], may[i]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], mix[i], may[i]) + 240 - stickman_y[i]
+				);
+				GrLine(dc,
+					rotX(stickman_r[i], max[i], miy[i]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], max[i], miy[i]) + 240 - stickman_y[i],
+					rotX(stickman_r[i], max[i], may[i]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], max[i], may[i]) + 240 - stickman_y[i]
+				);
+				if (selected_stickman == i) {
+					if (rotation_mode) {
+						dc->color = RED;
+						GrLine(dc, 320 - stickman_x[i], 230 - stickman_y[i], ms.pos.x, ms.pos.y - 8);
+						stickman_r[i] = atan2(ms.pos.x - (320 - stickman_x[i]), ms.pos.y - (240 - stickman_y[i]));
+					} else {
+						dc->color = BLACK;
+					}
+				}
+			}
+			if (stickmans[i][j][4] == 0) {
+				GrLine(dc,
+					rotX(stickman_r[i], stickmans[i][j][0], stickmans[i][j][1]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], stickmans[i][j][0], stickmans[i][j][1]) + 240 - stickman_y[i],
+					rotX(stickman_r[i], stickmans[i][j][2], stickmans[i][j][3]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], stickmans[i][j][2], stickmans[i][j][3]) + 240 - stickman_y[i]
+				);
+			} else if (stickmans[i][j][4] == 1) {
+				I64 dis = dist(stickmans[i][j][0], stickmans[i][j][2], stickmans[i][j][1], stickmans[i][j][3]);
+				I64 midx = ToI64((stickmans[i][j][0] + stickmans[i][j][2]) / 2);
+				I64 midy = ToI64((stickmans[i][j][1] + stickmans[i][j][3]) / 2);
+				GrCircle(dc, 
+					rotX(stickman_r[i], midx, midy) + 320 - stickman_x[i],
+					rotY(stickman_r[i], midx, midy) + 240 - stickman_y[i],
+					dis / 2
+				);
+			} else {
+				dc->color = stickmans[i][j][4] - 2;
+				GrLine(dc,
+					rotX(stickman_r[i], stickmans[i][j][0], stickmans[i][j][1]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], stickmans[i][j][0], stickmans[i][j][1]) + 240 - stickman_y[i],
+					rotX(stickman_r[i], stickmans[i][j][2], stickmans[i][j][3]) + 320 - stickman_x[i],
+					rotY(stickman_r[i], stickmans[i][j][2], stickmans[i][j][3]) + 240 - stickman_y[i]
+				);
+			}
+		}
+	}
+
+	dc->color = BLACK;
+	GrPrint(dc, 0, FONT_HEIGHT, "Animation:");
+	if (playing_animation) {
+		dc->color = RED;
+		GrPrint(dc, FONT_WIDTH * 11, FONT_HEIGHT, "Playing");
+	} else {
+		dc->color = LTGRAY;
+		GrPrint(dc, FONT_WIDTH * 11, FONT_HEIGHT, "Stopped");
+		dc->color = BLACK;
+		GrPrint(dc, 0, FONT_HEIGHT * 2, "Objects:");
+		dc->color = LTGRAY;
+		GrPrint(dc, FONT_WIDTH * 9, FONT_HEIGHT * 2, "%x", current_amount);
+		if (selected_stickman != -1) {
+			dc->color = BLACK;
+			GrPrint(dc, GR_WIDTH - FONT_WIDTH * 11, FONT_HEIGHT * 3, "Angle: %d", stickman_r[selected_stickman]);
+			GrPrint(dc, GR_WIDTH - FONT_WIDTH * 7, FONT_HEIGHT * 1, "X: %d", -stickman_x[selected_stickman]);
+			GrPrint(dc, GR_WIDTH - FONT_WIDTH * 7, FONT_HEIGHT * 2, "Y: %d", stickman_y[selected_stickman]);
+		}
+	}
+	dc->color = BLACK;
+	GrLine(dc, FONT_WIDTH * 19, FONT_HEIGHT * 2, (FONT_WIDTH * 19) + 303, FONT_HEIGHT * 2);
+	dc->color = RED;
+	I64 f_unit = 0, stf = 0;
+	for (stf=0;stf<100;stf++) {
+		if (timeline_content[stf] == TRUE) {
+			GrLine(dc, ToI64((395 / 100) * stf) + FONT_WIDTH * 19, FONT_HEIGHT, ToI64((395 / 100) * stf) + FONT_WIDTH * 19, FONT_HEIGHT * 2);
+		}
+	}
+	if (current_frame > 0)
+		f_unit = ToI64((395 / 100) * current_frame);
+	GrPrint(dc, f_unit + FONT_WIDTH * 19 + 7, FONT_HEIGHT, "%d", current_frame + 1);
+	GrLine(dc, f_unit + FONT_WIDTH * 19 - 5, FONT_HEIGHT, f_unit + FONT_WIDTH * 19 + 5, FONT_HEIGHT);
+	GrLine(dc, f_unit + FONT_WIDTH * 19 - 5, FONT_HEIGHT, f_unit + FONT_WIDTH * 19, FONT_HEIGHT * 2);
+	GrLine(dc, f_unit + FONT_WIDTH * 19 + 5, FONT_HEIGHT, f_unit + FONT_WIDTH * 19, FONT_HEIGHT * 2);
+	dc->color = BLACK;
+	GrLine(dc, 0, FONT_HEIGHT * 4, 640, FONT_HEIGHT * 4);
+}
+
+U0 set_stickman (I64 id) {
+	stickmans[id][0][0] = 0;
+	stickmans[id][0][1] = -60;
+	stickmans[id][0][2] = 0;
+	stickmans[id][0][3] = -40;
+	stickmans[id][0][4] = 1;
+	stickmans[id][0][5] = 0;
+	stickmans[id][0][6] = 0;
+	stickmans[0][0][7] = 0;
+
+	stickmans[id][1][0] = 0;
+	stickmans[id][1][1] = -40;
+	stickmans[id][1][2] = 0;
+	stickmans[id][1][3] = 0;
+	stickmans[id][1][4] = 0;
+	stickmans[id][1][5] = 0;
+	stickmans[id][1][6] = 0;
+	stickmans[id][1][7] = 0;
+
+	stickmans[id][2][0] = 0;
+	stickmans[id][2][1] = -40;
+	stickmans[id][2][2] = -28;
+	stickmans[id][2][3] = -40;
+	stickmans[id][2][4] = 0;
+	stickmans[id][2][5] = 0;
+	stickmans[id][2][6] = 0;
+	stickmans[id][2][7] = 0;
+
+	stickmans[id][3][0] = 56;
+	stickmans[id][3][1] = -40;
+	stickmans[id][3][2] = 28;
+	stickmans[id][3][3] = -40;
+	stickmans[id][3][4] = 0;
+	stickmans[id][3][5] = 0;
+	stickmans[id][3][6] = 0;
+	stickmans[id][3][7] = 0;
+
+	stickmans[id][4][0] = 28;
+	stickmans[id][4][1] = -40;
+	stickmans[id][4][2] = 0;
+	stickmans[id][4][3] = -40;
+	stickmans[id][4][4] = 0;
+	stickmans[id][4][5] = 0;
+	stickmans[id][4][6] = 0;
+	stickmans[id][4][7] = 0;
+
+	stickmans[id][5][0] = -28;
+	stickmans[id][5][1] = -40;
+	stickmans[id][5][2] = -56;
+	stickmans[id][5][3] = -40;
+	stickmans[id][5][4] = 0;
+	stickmans[id][5][5] = 0;
+	stickmans[id][5][6] = 0;
+	stickmans[id][5][7] = 0;
+
+	stickmans[id][6][0] = 0;
+	stickmans[id][6][1] = 0;
+	stickmans[id][6][2] = -20;
+	stickmans[id][6][3] = 20;
+	stickmans[id][6][4] = 0;
+	stickmans[id][6][5] = 0;
+	stickmans[id][6][6] = 0;
+	stickmans[id][6][7] = 0;
+
+	stickmans[id][7][0] = -20;
+	stickmans[id][7][1] = 20;
+	stickmans[id][7][2] = -40;
+	stickmans[id][7][3] = 40;
+	stickmans[id][7][4] = 0;
+	stickmans[id][7][5] = 0;
+	stickmans[id][7][6] = 0;
+	stickmans[id][7][7] = 0;
+
+	stickmans[id][8][0] = 0;
+	stickmans[id][8][1] = 0;
+	stickmans[id][8][2] = 20;
+	stickmans[id][8][3] = 20;
+	stickmans[id][8][4] = 0;
+	stickmans[id][8][5] = 0;
+	stickmans[id][8][6] = 0;
+	stickmans[id][8][7] = 0;
+
+	stickmans[id][9][0] = 20;
+	stickmans[id][9][1] = 20;
+	stickmans[id][9][2] = 40;
+	stickmans[id][9][3] = 40;
+	stickmans[id][9][4] = 0;
+	stickmans[id][9][5] = 0;
+	stickmans[id][9][6] = 0;
+	stickmans[id][9][7] = 0;
+}
+
+U0 animation_program () {
+	set_stickman(0);
+	set_stickman(1);
+	set_stickman(2);
+	set_stickman(3);
+	set_stickman(4);
+	set_stickman(5);
+	set_stickman(6);
+	set_stickman(7);
+	set_stickman(8);
+	set_stickman(9);
+	I64 arg1, arg2, ch, msg_code, sc, fc, cmip, current_stickman;
+	I64 old_flags=DocPut->flags;
+	DocPut->flags|=DOCF_FORM;
+	SettingsPush;
+	WinBorder;
+	WinMax;
+	DocCursor;
+	DocClear;
+	Fs->draw_it=&DrawIt;
+	MenuPush(
+		"File {"
+		"	Open(, CH_CTRLO);"
+		"	Save(, CH_CTRLS);"
+		"	Exit(, CH_ESC);"
+		"}"
+		"Stickman {"
+		"	New(, CH_CTRLN);"
+		"}"
+	);
+	try {
+		do {
+			if (msg_code=ScanMsg(&arg1, &arg2, 1 << MSG_KEY_DOWN)) {
+				sc=arg2;
+				ch=arg1;
+				switch (ch) {
+					case 'p':
+						if (!playing_animation) {
+							current_frame = 0;
+						}
+						playing_animation = !playing_animation;
+						break;
+					case 'r':
+						rotation_mode = !rotation_mode;
+						break;
+					case CH_CTRLN:
+						current_amount += 1;
+						selected_stickman = current_amount - 1;
+						stickman_y[selected_stickman] = 0;
+						stickman_x[selected_stickman] = 0;
+						stickman_r[selected_stickman] = 0;
+						break;
+					case CH_CTRLS:
+						SaveAnimation;
+						break;
+					case CH_CTRLO:
+						LoadAnimation;
+				};
+			}
+			if (ms.rb) {
+				for (fc=0;fc<10;fc++) {
+					if (selected_stickman == fc) {
+						current_stickman = selected_stickman;
+						cmip = context_menu_stickman;
+						selected_stickman = current_stickman;
+						switch (cmip) {
+							case P_CLONE:
+								I64 cl, cl2;
+								current_amount += 1;
+								stickman_y[current_amount - 1] = 0;
+								stickman_x[current_amount - 1] = 0;
+								stickman_r[current_amount - 1] = 0;
+								for (cl=0;cl<10;cl++) {
+									for (cl2=0;cl2<10;cl2++) {
+										stickmans[current_amount - 1][cl][cl2] = stickmans[selected_stickman][cl][cl2];
+									}
+								}
+								selected_point = FALSE;
+								mx[selected_stickman] = -1;
+								my[selected_stickman] = -1;
+								mxt[selected_stickman] = stickman_x[selected_stickman];
+								myt[selected_stickman] = stickman_y[selected_stickman];
+								rotation_mode = FALSE;
+								selected_stickman = -1;
+								break;
+							case P_RESET_POS:
+								set_stickman(selected_stickman);
+								break;
+							case P_RESET:
+								set_stickman(selected_stickman);
+								stickman_y[selected_stickman] = 0;
+								stickman_x[selected_stickman] = 0;
+								stickman_r[selected_stickman] = 0;
+								break;
+							case P_SET_PROPS:
+								stickman_props sp;
+								sp.l1 = stickmans[selected_stickman][0][4];
+								sp.l2 = stickmans[selected_stickman][1][4];
+								sp.l3 = stickmans[selected_stickman][2][4];
+								sp.l4 = stickmans[selected_stickman][5][4];
+								sp.l5 = stickmans[selected_stickman][4][4];
+								sp.l6 = stickmans[selected_stickman][3][4];
+								sp.l7 = stickmans[selected_stickman][6][4];
+								sp.l8 = stickmans[selected_stickman][7][4];
+								sp.l9 = stickmans[selected_stickman][8][4];
+								sp.l10 = stickmans[selected_stickman][9][4];
+								DocForm(&sp);
+								stickmans[selected_stickman][0][4] = sp.l1;
+								stickmans[selected_stickman][1][4] = sp.l2;
+								stickmans[selected_stickman][2][4] = sp.l3;
+								stickmans[selected_stickman][5][4] = sp.l4;
+								stickmans[selected_stickman][4][4] = sp.l5;
+								stickmans[selected_stickman][3][4] = sp.l6;
+								stickmans[selected_stickman][6][4] = sp.l7;
+								stickmans[selected_stickman][7][4] = sp.l8;
+								stickmans[selected_stickman][8][4] = sp.l9;
+								stickmans[selected_stickman][9][4] = sp.l10;
+								break;
+						}
+					}
+				}
+				if (selected_stickman == -1) {
+					cmip = context_menu;
+					switch (cmip) {
+						case P_NEW_STICK:
+							current_amount += 1;
+							selected_stickman = current_amount - 1;
+							stickman_y[selected_stickman] = 0;
+							stickman_x[selected_stickman] = 0;
+							stickman_r[selected_stickman] = 0;
+							break;
+						case P_ADD_FRAME:
+							I64 limb, limb_a, stkm, stkmx, stkmy;
+							for (stkm=0;stkm<10;stkm++) {
+								for (limb=0;limb<10;limb++) {
+									for (limb_a=0;limb_a<8;limb_a++) {
+										timeline[current_frame].stickmans[stkm][limb][limb_a] = stickmans[stkm][limb][limb_a];
+									}
+								}
+							}
+							//*timeline[current_frame].stickmans = *stickmans;
+							for (stkmx=0;stkmx<10;stkmx++) {
+								timeline[current_frame].stickman_x[stkmx] = stickman_x[stkmx];
+							}
+							for (stkmy=0;stkmy<10;stkmy++) {
+								timeline[current_frame].stickman_y[stkmy] = stickman_y[stkmy];
+							}
+							for (stkmy=0;stkmy<10;stkmy++) {
+								timeline[current_frame].stickman_r[stkmy] = stickman_r[stkmy];
+							}
+							timeline_content[current_frame] = TRUE;
+							break;
+						case P_REM_FRAME:
+							timeline_content[current_frame] = FALSE;
+							break;
+						case P_SET_BG:
+							background = !background;
+							break;
+					}
+				}
+			}
+			if (playing_animation && current_frame <= 100) {
+				load_frame(current_frame);
+				current_frame += 1;
+			} else {
+				//current_frame = 0;
+			}
+			Sleep(10);
+		} while (ch!=CH_ESC);
+	} catch
+		PutExcept;
+	DocPut->flags=DocPut->flags&~DOCF_FORM | old_flags & DOCF_FORM;
+	SettingsPop;
+	MenuPop;
+}
+
+AutoComplete;
+animation_program;
+Dir;

@@ -1,0 +1,53 @@
+#define P_CLONE 1
+#define P_SET_PROPS 2
+#define P_RESET 3
+#define P_RESET_POS 4
+#define P_NEW_STICK 5
+#define P_SET_BG 6
+#define P_ADD_FRAME 7
+#define P_REM_FRAME 8
+
+class stickman_props {
+	I64 l1 format "\n\n\n\n\n$DA-TRM,A=\"Head: %2d$\n";
+	I64 l2 format "$DA-TRM,A=\"Torso: %2d$\n";
+	I64 l3 format "$DA-TRM,A=\"Arm L 1: %2d$\n";
+	I64 l4 format "$DA-TRM,A=\"Arm L 2: %2d$\n";
+	I64 l5 format "$DA-TRM,A=\"Arm R 1: %2d$\n";
+	I64 l6 format "$DA-TRM,A=\"Arm R 2: %2d$\n";
+	I64 l7 format "$DA-TRM,A=\"Leg L 1: %2d$\n";
+	I64 l8 format "$DA-TRM,A=\"Leg L 2: %2d$\n";
+	I64 l9 format "$DA-TRM,A=\"Leg R 1: %2d$\n";
+	I64 l10 format "$DA-TRM,A=\"Leg R 2: %2d$\n";
+};
+
+I64 l;
+I64 context_menu_stickman () {
+	I64 i = 0;
+	CDoc *doc=DocNew;
+	DocPrint(doc,
+		"Properties\n\n\n"
+		"$$BT,\" Clone            \",LE=P_CLONE$$\n\n\n"
+		"$$BT,\" Change Properties\",LE=P_SET_PROPS$$\n\n\n"
+		"$$BT,\" Reset            \",LE=P_RESET$$\n\n\n"
+		"$$BT,\" Reset position   \",LE=P_RESET_POS$$\n\n\n\n"
+		"$ER$$$BT,\" CANCEL           \",LE=DOCM_CANCEL$$\n"
+	);
+	i=PopUpMenu(doc);
+	DocDel(doc);
+	return i;
+}
+
+I64 context_menu () {
+	I64 i = 0;
+	CDoc *doc=DocNew;
+	DocPrint(doc,
+		"\n$$BT,\" New stickman     \",LE=P_NEW_STICK$$\n\n\n"
+		"$$BT,\" Change background\",LE=P_SET_BG$$\n\n\n"
+		"$$BT,\" Add frame        \",LE=P_ADD_FRAME$$\n\n\n"
+		"$$BT,\" Remove frame     \",LE=P_REM_FRAME$$\n\n\n"
+		"$ER$$$BT,\" CANCEL           \",LE=DOCM_CANCEL$$\n"
+	);
+	i=PopUpMenu(doc);
+	DocDel(doc);
+	return i;
+}

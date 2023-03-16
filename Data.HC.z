@@ -1,0 +1,6 @@
+class frame {
+	I64 stickmans[10][10][8];
+	I64 stickman_x[10];
+	I64 stickman_y[10];
+	I64 stickman_r[10];
+};

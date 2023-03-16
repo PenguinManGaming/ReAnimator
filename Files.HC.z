@@ -1,0 +1,8 @@
+#include "Datatypes.HC.z"
+
+U0 SaveAnimation (Bool timeline_content[100], frame timeline[100], Bool background) {
+	U8 *src = ("No lma%d", 0), *filename;
+	open_file filename;
+	DocForm(&filename);
+	FileWrite(filename.f_path, src, StrLen(src));
+}

@@ -1,0 +1,9 @@
+class frame {
+	I64 stickmans[10][10][8];
+	I64 stickman_x[10];
+	I64 stickman_y[10];
+};
+
+class open_file {
+	U8 *f_path format "$DA-TRM,A=\"Path: %2d$\n";
+}
